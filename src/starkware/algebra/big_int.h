@@ -56,6 +56,12 @@ class BigInt {
   static BigInt MulMod(const BigInt& a, const BigInt& b, const BigInt& modulus);
 
   /*
+    Computes the inverse of *this in the field GF(prime).
+    If prime is not a prime number, the behavior is undefined.
+  */
+  BigInt InvModPrime(const BigInt& prime) const;
+
+  /*
     Return pair of the form (result, underflow_occurred).
   */
   static constexpr std::pair<BigInt, bool> Sub(const BigInt& a, const BigInt& b);
@@ -64,9 +70,9 @@ class BigInt {
 
   constexpr bool operator>=(const BigInt& b) const { return !(*this < b); }
 
-  bool operator>(const BigInt& b) const { return b < *this; }
+  constexpr bool operator>(const BigInt& b) const { return b < *this; }
 
-  bool operator<=(const BigInt& b) const { return !(*this > b); }
+  constexpr bool operator<=(const BigInt& b) const { return !(*this > b); }
 
   /*
     Returns the pair (q, r) such that this == q*divisor + r and r < divisor.

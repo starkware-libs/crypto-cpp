@@ -80,6 +80,14 @@ BigInt<N> BigInt<N>::MulMod(const BigInt& a, const BigInt& b, const BigInt& modu
 }
 
 template <size_t N>
+BigInt<N> BigInt<N>::InvModPrime(const BigInt& prime) const {
+  ASSERT(*this != BigInt::Zero(), "Inverse of 0 is not defined.");
+  return GenericPow(
+      *this, (prime - BigInt(2)).ToBoolVector(), BigInt::One(),
+      [&prime](const BigInt& multiplier, BigInt* dst) { *dst = MulMod(*dst, multiplier, prime); });
+}
+
+template <size_t N>
 constexpr std::pair<BigInt<N>, bool> BigInt<N>::Sub(const BigInt& a, const BigInt& b) {
   bool carry{};
   BigInt r{};

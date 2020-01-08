@@ -2,6 +2,7 @@
 
 #include <limits>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "starkware/utils/test_utils.h"
@@ -9,12 +10,7 @@
 namespace starkware {
 namespace {
 
-using TestTypes = ::testing::Types<BigInt<1>, BigInt<2>, BigInt<5>, BigInt<10>>;
-
-template <typename>
-class BigIntTest : public ::testing::Test {};
-
-TYPED_TEST_CASE(BigIntTest, TestTypes);
+using testing::HasSubstr;
 
 TEST(BigInt, Random) {
   Prng prng;
@@ -106,6 +102,19 @@ TEST(BigInt, MulMod) {
   EXPECT_EQ(res, BigInt<4>(1));
 
   EXPECT_EQ(BigInt<4>::MulMod(BigInt<4>(7), BigInt<4>(5), BigInt<4>(32)), BigInt<4>(3));
+}
+
+TEST(BigInt, InvMod) {
+  Prng prng;
+  const auto val = BigInt<4>::RandomBigInt(&prng);
+  const auto prime = 0xf04a65fa008b9e14bfe07094f9ff9bb7363ae6512e213a0a104adb17fb81b385_Z;
+  const auto inv = val.InvModPrime(prime);
+  EXPECT_EQ(BigInt<4>::MulMod(val, inv, prime), 0x1_Z);
+}
+
+TEST(BigInt, InvMod_Zero) {
+  const auto prime = 0xf04a65fa008b9e14bfe07094f9ff9bb7363ae6512e213a0a104adb17fb81b385_Z;
+  EXPECT_ASSERT(BigInt<4>::Zero().InvModPrime(prime), HasSubstr("Inverse of 0"));
 }
 
 TEST(BigInt, UserLiteral) {

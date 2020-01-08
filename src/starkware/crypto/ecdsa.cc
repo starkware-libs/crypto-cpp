@@ -3,14 +3,70 @@
 #include "starkware/algebra/fraction_field_element.h"
 #include "starkware/crypto/elliptic_curve_constants.h"
 #include "starkware/utils/error_handling.h"
+#include "starkware/utils/prng.h"
 
 namespace starkware {
 
+EcPoint<PrimeFieldElement> GetPublicKey(const PrimeFieldElement::ValueType& private_key) {
+  const auto& generator = GetEcConstants().k_points[1];
+  const auto& alpha = GetEcConstants().k_alpha;
+  return generator.MultiplyByScalar(private_key, alpha);
+}
+
+Signature SignEcdsa(const PrimeFieldElement::ValueType& private_key, const PrimeFieldElement& z) {
+  using ValueType = typename PrimeFieldElement::ValueType;
+  const auto& generator = GetEcConstants().k_points[1];
+  const auto& alpha = GetEcConstants().k_alpha;
+  const auto& curve_order = GetEcConstants().k_order;
+  constexpr auto upper_bound = 0x800000000000000000000000000000000000000000000000000000000000000_Z;
+  static_assert(upper_bound <= PrimeFieldElement::kModulus);
+  ASSERT(upper_bound <= curve_order, "Unexpected curve size.");
+
+  ASSERT(z != PrimeFieldElement::Zero(), "Message cannot be zero.");
+  ASSERT(z.ToStandardForm() < upper_bound, "z is too big.");
+
+  Prng prng;
+
+  // The probability of this loop not terminating during it's first iteration is negligible.
+  for (size_t i = 0; i < 100; i++) {
+    // This randomness is unsafe, but good enough for testing purposes.
+    const auto k = ValueType::MulMod(ValueType::RandomBigInt(&prng), ValueType::One(), curve_order);
+    if (k == ValueType::Zero()) {
+      continue;
+    }
+    const PrimeFieldElement x = generator.MultiplyByScalar(k, alpha).x;
+    const ValueType r = x.ToStandardForm();
+    if (r >= curve_order || r == ValueType::Zero()) {
+      continue;
+    }
+
+    const ValueType k_inv = k.InvModPrime(curve_order);
+    ValueType s = ValueType::MulMod(r, private_key, curve_order);
+    // Non modular addition, requires the summands to be small enough to prevent overflow.
+    ASSERT(curve_order.NumLeadingZeros() > 0, "Implementation assumes smaller curve.");
+    s = s + z.ToStandardForm();
+    s = ValueType::MulMod(s, k_inv, curve_order);
+    if (s == ValueType::Zero()) {
+      continue;
+    }
+
+    const ValueType w = s.InvModPrime(curve_order);
+    if (w >= upper_bound) {
+      continue;
+    }
+    const PrimeFieldElement w_field = PrimeFieldElement::FromBigInt(w);
+    return {x, w_field};
+  }
+  ASSERT(false, "Could not find valid randomness for signing.");
+}
+
 bool VerifyEcdsa(
     const EcPoint<PrimeFieldElement>& public_key, const PrimeFieldElement& z,
-    const PrimeFieldElement& r, const PrimeFieldElement& w) {
+    const Signature& sig) {
   using FractionFieldElementT = FractionFieldElement<PrimeFieldElement>;
   using EcPointT = EcPoint<FractionFieldElementT>;
+  const auto& r = sig.first;
+  const auto& w = sig.second;
   // z, r, w should be smaller than 2^251.
   const auto upper_bound = 0x800000000000000000000000000000000000000000000000000000000000000_Z;
   ASSERT(z != PrimeFieldElement::Zero(), "Message cannot be zero.");
@@ -31,8 +87,7 @@ bool VerifyEcdsa(
 }
 
 bool VerifyEcdsaPartialKey(
-    const PrimeFieldElement& public_key_x, const PrimeFieldElement& z, const PrimeFieldElement& r,
-    const PrimeFieldElement& w) {
+    const PrimeFieldElement& public_key_x, const PrimeFieldElement& z, const Signature& sig) {
   const auto alpha = GetEcConstants().k_alpha;
   const auto beta = GetEcConstants().k_beta;
   const auto public_key = EcPoint<PrimeFieldElement>::GetPointFromX(public_key_x, alpha, beta);
@@ -42,7 +97,7 @@ bool VerifyEcdsaPartialKey(
 
   // There are two points on the elliptic curve with the given public_key_x, both will be
   // tested by VerifyEcdsa().
-  return VerifyEcdsa(*public_key, z, r, w);
+  return VerifyEcdsa(*public_key, z, sig);
 }
 
 }  // namespace starkware

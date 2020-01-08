@@ -9,6 +9,30 @@
 namespace starkware {
 namespace {
 
+TEST(ECDSA, PublicKeyFromPrivate) {
+  const auto private_key = 0x3c1e9550e66958296d11b60f8e8e7a7ad990d07fa65d5f7652c4a6c87d4e3cc_Z;
+  const EcPoint<PrimeFieldElement> public_key(
+      PrimeFieldElement::FromBigInt(
+          0x77a3b314db07c45076d11f62b6f9e748a39790441823307743cf00d6597ea43_Z),
+      PrimeFieldElement::FromBigInt(
+          0x54d7beec5ec728223671c627557efc5c9a6508425dc6c900b7741bf60afec06_Z));
+
+  EXPECT_EQ(public_key, GetPublicKey(private_key));
+}
+
+TEST(ECDSA, SignAndVerify) {
+  Prng prng;
+  using ValueType = PrimeFieldElement::ValueType;
+
+  // Draw test parameters.
+  const auto private_key = ValueType::RandomBigInt(&prng);
+  const auto public_key = GetPublicKey(private_key);
+  const auto msg = PrimeFieldElement::RandomElement(&prng);
+
+  const auto signature = SignEcdsa(private_key, msg);
+  EXPECT_TRUE(VerifyEcdsa(public_key, msg, signature));
+}
+
 TEST(VerifyEcdsa, Regression) {
   Prng prng;
   const auto alpha = GetEcConstants().k_alpha;
@@ -30,19 +54,20 @@ TEST(VerifyEcdsa, Regression) {
       0x173fd03d8b008ee7432977ac27d1e9d1a1f6c98b1a2f05fa84a21c84c44e882_Z);
   const auto w = PrimeFieldElement::FromBigInt(
       0x1f2c44a7798f55192f153b4c48ea5c1241fbb69e6132cc8a0da9c5b62a4286e_Z);
-  EXPECT_TRUE(VerifyEcdsa(public_key, z, r, w));
-  EXPECT_TRUE(VerifyEcdsa(-public_key, z, r, w));
-  EXPECT_FALSE(VerifyEcdsa(wrong_public_key, z, r, w));
-  EXPECT_FALSE(VerifyEcdsa(public_key, z + PrimeFieldElement::One(), r, w));
-  EXPECT_FALSE(VerifyEcdsa(public_key, z, r + PrimeFieldElement::One(), w));
-  EXPECT_FALSE(VerifyEcdsa(public_key, z, r, w + PrimeFieldElement::One()));
 
-  EXPECT_TRUE(VerifyEcdsaPartialKey(public_key_x, z, r, w));
-  EXPECT_FALSE(VerifyEcdsaPartialKey(wrong_public_key.x, z, r, w));
-  EXPECT_FALSE(VerifyEcdsaPartialKey(public_key_x, z + PrimeFieldElement::One(), r, w));
-  EXPECT_FALSE(VerifyEcdsaPartialKey(public_key_x, z, r + PrimeFieldElement::One(), w));
-  EXPECT_FALSE(VerifyEcdsaPartialKey(public_key_x, z, r, w + PrimeFieldElement::One()));
-  EXPECT_FALSE(VerifyEcdsaPartialKey(public_key_y, z, r, w));
+  EXPECT_TRUE(VerifyEcdsa(public_key, z, {r, w}));
+  EXPECT_TRUE(VerifyEcdsa(-public_key, z, {r, w}));
+  EXPECT_FALSE(VerifyEcdsa(wrong_public_key, z, {r, w}));
+  EXPECT_FALSE(VerifyEcdsa(public_key, z + PrimeFieldElement::One(), {r, w}));
+  EXPECT_FALSE(VerifyEcdsa(public_key, z, {r + PrimeFieldElement::One(), w}));
+  EXPECT_FALSE(VerifyEcdsa(public_key, z, {r, w + PrimeFieldElement::One()}));
+
+  EXPECT_TRUE(VerifyEcdsaPartialKey(public_key_x, z, {r, w}));
+  EXPECT_FALSE(VerifyEcdsaPartialKey(wrong_public_key.x, z, {r, w}));
+  EXPECT_FALSE(VerifyEcdsaPartialKey(public_key_x, z + PrimeFieldElement::One(), {r, w}));
+  EXPECT_FALSE(VerifyEcdsaPartialKey(public_key_x, z, {r + PrimeFieldElement::One(), w}));
+  EXPECT_FALSE(VerifyEcdsaPartialKey(public_key_x, z, {r, w + PrimeFieldElement::One()}));
+  EXPECT_FALSE(VerifyEcdsaPartialKey(public_key_y, z, {r, w}));
 }
 
 TEST(VerifyEcdsa, Benchmark) {
@@ -50,8 +75,8 @@ TEST(VerifyEcdsa, Benchmark) {
   for (size_t i = 0; i < 100; i++) {
     EXPECT_FALSE(VerifyEcdsa(
         {PrimeFieldElement::RandomElement(&prng), PrimeFieldElement::RandomElement(&prng)},
-        PrimeFieldElement::RandomElement(&prng), PrimeFieldElement::RandomElement(&prng),
-        PrimeFieldElement::RandomElement(&prng)));
+        PrimeFieldElement::RandomElement(&prng),
+        {PrimeFieldElement::RandomElement(&prng), PrimeFieldElement::RandomElement(&prng)}));
   }
 }
 
@@ -62,7 +87,7 @@ TEST(VerifyEcdsaPartialKey, Benchmark) {
   for (size_t i = 0; i < 100; i++) {
     EXPECT_FALSE(VerifyEcdsaPartialKey(
         public_key_x, PrimeFieldElement::RandomElement(&prng),
-        PrimeFieldElement::RandomElement(&prng), PrimeFieldElement::RandomElement(&prng)));
+        {PrimeFieldElement::RandomElement(&prng), PrimeFieldElement::RandomElement(&prng)}));
   }
 }
 

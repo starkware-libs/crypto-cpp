@@ -9,7 +9,7 @@ namespace {
 PrimeFieldElement GetOrderPackedMessage(
     uint64_t order_type, uint64_t vault_a, uint64_t vault_b, uint64_t amount_a, uint64_t amount_b,
     uint64_t nonce, uint64_t expiration_timestamp) {
-  static constexpr uint64_t kOrderTypeLimit = 2;
+  static constexpr uint64_t kOrderTypeLimit = 3;
   static constexpr uint64_t kVaultIdLimit = Pow2(31);
   static constexpr uint64_t kAmountLimit = Pow2(63);
   static constexpr uint64_t kNonceLimit = Pow2(31);
@@ -59,6 +59,16 @@ PrimeFieldElement GetTransferOrderMessage(
       PedersenHash(token, target_public_key),
       GetOrderPackedMessage(
           1, sender_vault_id, target_vault_id, amount, 0, nonce, expiration_timestamp));
+}
+
+PrimeFieldElement GetConditionalTransferOrderMessage(
+    uint64_t sender_vault_id, uint64_t target_vault_id, uint64_t amount, uint64_t nonce,
+    uint64_t expiration_timestamp, const PrimeFieldElement& token,
+    const PrimeFieldElement& target_public_key, const PrimeFieldElement& condition) {
+  return PedersenHash(
+      PedersenHash(PedersenHash(token, target_public_key), condition),
+      GetOrderPackedMessage(
+          2, sender_vault_id, target_vault_id, amount, 0, nonce, expiration_timestamp));
 }
 
 uint64_t GetOrderIdFromMessage(const PrimeFieldElement& message) {

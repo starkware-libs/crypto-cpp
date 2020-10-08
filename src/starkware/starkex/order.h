@@ -30,6 +30,18 @@ PrimeFieldElement GetTransferOrderMessage(
     const PrimeFieldElement& target_public_key);
 
 /*
+  Serializes the conditional transfer message in the canonical format expected by the verifier.
+  The sender transfers amount coins of type token to target_public_key, from sender_vault_id
+  to target_vault_id, only if condition is valid.
+  expiration_timestamp - the number of hours that have elapsed since 01/01/1970 (i.e.,
+  Unix timstamp / 3600).
+*/
+PrimeFieldElement GetConditionalTransferOrderMessage(
+    uint64_t sender_vault_id, uint64_t target_vault_id, uint64_t amount, uint64_t nonce,
+    uint64_t expiration_timestamp, const PrimeFieldElement& token,
+    const PrimeFieldElement& target_public_key, const PrimeFieldElement& condition);
+
+/*
   Returns the 63-bit order id based on the order message (the result of GetSettlementOrderMessage()
   or GetTransferOrderMessage()).
 */

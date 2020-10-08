@@ -38,6 +38,22 @@ TEST(TransferOrder, Regression) {
   EXPECT_EQ(GetOrderIdFromMessage(message), 7162605823528514760);
 }
 
+TEST(ConditionalTransferOrder, Regression) {
+  // The following hard-coded values were cross-checked with a number of implementations.
+  const auto message = GetConditionalTransferOrderMessage(
+      34, 21, 2154549703648910716, 1, 438953,
+      PrimeFieldElement::FromBigInt(
+          0x3003a65651d3b9fb2eff934a4416db301afd112a8492aaf8d7297fc87dcd9f4_Z),
+      PrimeFieldElement::FromBigInt(
+          0x5fa3383597691ea9d827a79e1a4f0f7949435ced18ca9619de8ab97e661020_Z),
+      PrimeFieldElement::FromBigInt(
+          0x318ff6d26cf3175c77668cd6434ab34d31e59f806a6a7c06d08215bccb7eaf8_Z));
+  const auto expected_message = PrimeFieldElement::FromBigInt(
+      0xfa5f0ad1ebff93c9e6474379a213ba1e1f9e42f5f1cb361b0327e073720384_Z);
+  EXPECT_EQ(message, expected_message);
+  EXPECT_EQ(GetOrderIdFromMessage(message), 1127571908062083388);
+}
+
 TEST(GetOrderIdFromMessage, Correctness) {
   Prng prng;
   const uint64_t order_id = prng.RandomUint64(0, Pow2(63) - 1);

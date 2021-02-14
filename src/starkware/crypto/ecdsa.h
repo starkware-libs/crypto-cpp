@@ -21,12 +21,14 @@ using Signature = std::pair<PrimeFieldElement, PrimeFieldElement>;
 EcPoint<PrimeFieldElement> GetPublicKey(const PrimeFieldElement::ValueType& private_key);
 
 /*
-  Signs message hash z with the provided private_key.
+  Signs message hash z with the provided private_key, with randomness k.
 
-  NOTE: This function should ONLY be used for testing as it uses an unsafe random function for
-  choosing k.
+  NOTE: k should be a strong cryptographical random, and not repeat.
+  See: https://tools.ietf.org/html/rfc6979.
 */
-Signature SignEcdsa(const PrimeFieldElement::ValueType& private_key, const PrimeFieldElement& z);
+Signature SignEcdsa(
+    const PrimeFieldElement::ValueType& private_key, const PrimeFieldElement& z,
+    const PrimeFieldElement::ValueType& k);
 
 /*
   Verifies ECDSA signature of a given hash message z with a given public key.

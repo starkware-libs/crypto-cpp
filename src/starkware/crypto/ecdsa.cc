@@ -13,7 +13,9 @@ EcPoint<PrimeFieldElement> GetPublicKey(const PrimeFieldElement::ValueType& priv
   return generator.MultiplyByScalar(private_key, alpha);
 }
 
-Signature SignEcdsa(const PrimeFieldElement::ValueType& private_key, const PrimeFieldElement& z) {
+Signature SignEcdsa(
+    const PrimeFieldElement::ValueType& private_key, const PrimeFieldElement& z,
+    const PrimeFieldElement::ValueType& k) {
   using ValueType = typename PrimeFieldElement::ValueType;
   const auto& generator = GetEcConstants().k_points[1];
   const auto& alpha = GetEcConstants().k_alpha;
@@ -24,40 +26,26 @@ Signature SignEcdsa(const PrimeFieldElement::ValueType& private_key, const Prime
 
   ASSERT(z != PrimeFieldElement::Zero(), "Message cannot be zero.");
   ASSERT(z.ToStandardForm() < upper_bound, "z is too big.");
+  ASSERT(k != ValueType::Zero(), "k must not be zero");
 
-  Prng prng;
+  const PrimeFieldElement x = generator.MultiplyByScalar(k, alpha).x;
+  const ValueType r = x.ToStandardForm();
+  ASSERT(
+      (r < curve_order) && (r != ValueType::Zero()),
+      "Bad randomness, please try a different a different k.");
 
-  // The probability of this loop not terminating during it's first iteration is negligible.
-  for (size_t i = 0; i < 100; i++) {
-    // This randomness is unsafe, but good enough for testing purposes.
-    const auto k = ValueType::MulMod(ValueType::RandomBigInt(&prng), ValueType::One(), curve_order);
-    if (k == ValueType::Zero()) {
-      continue;
-    }
-    const PrimeFieldElement x = generator.MultiplyByScalar(k, alpha).x;
-    const ValueType r = x.ToStandardForm();
-    if (r >= curve_order || r == ValueType::Zero()) {
-      continue;
-    }
+  const ValueType k_inv = k.InvModPrime(curve_order);
+  ValueType s = ValueType::MulMod(r, private_key, curve_order);
+  // Non modular addition, requires the summands to be small enough to prevent overflow.
+  ASSERT(curve_order.NumLeadingZeros() > 0, "Implementation assumes smaller curve.");
+  s = s + z.ToStandardForm();
+  s = ValueType::MulMod(s, k_inv, curve_order);
+  ASSERT(s != ValueType::Zero(), "Bad randomness, please try a different k.");
 
-    const ValueType k_inv = k.InvModPrime(curve_order);
-    ValueType s = ValueType::MulMod(r, private_key, curve_order);
-    // Non modular addition, requires the summands to be small enough to prevent overflow.
-    ASSERT(curve_order.NumLeadingZeros() > 0, "Implementation assumes smaller curve.");
-    s = s + z.ToStandardForm();
-    s = ValueType::MulMod(s, k_inv, curve_order);
-    if (s == ValueType::Zero()) {
-      continue;
-    }
-
-    const ValueType w = s.InvModPrime(curve_order);
-    if (w >= upper_bound) {
-      continue;
-    }
-    const PrimeFieldElement w_field = PrimeFieldElement::FromBigInt(w);
-    return {x, w_field};
-  }
-  ASSERT(false, "Could not find valid randomness for signing.");
+  const ValueType w = s.InvModPrime(curve_order);
+  ASSERT(w < upper_bound, "Bad randomness, please try a different k.");
+  const PrimeFieldElement w_field = PrimeFieldElement::FromBigInt(w);
+  return {x, w_field};
 }
 
 bool VerifyEcdsa(

@@ -28,8 +28,10 @@ TEST(ECDSA, SignAndVerify) {
   const auto private_key = ValueType::RandomBigInt(&prng);
   const auto public_key = GetPublicKey(private_key);
   const auto msg = PrimeFieldElement::RandomElement(&prng);
+  // Choose an arbitrary value for k,
+  const auto k = 0x54d7beec5ec728223671c627557efc5c9a6508425dc6c900b7741bf60afec06_Z;
 
-  const auto signature = SignEcdsa(private_key, msg);
+  const auto signature = SignEcdsa(private_key, msg, k);
   EXPECT_TRUE(VerifyEcdsa(public_key, msg, signature));
 }
 

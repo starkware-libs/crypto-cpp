@@ -12,7 +12,7 @@ enable_testing()
 include_directories("${CMAKE_SOURCE_DIR}/src")
 
 if (NOT DEFINED CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

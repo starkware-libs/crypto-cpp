@@ -1,4 +1,4 @@
-#include <endian.h>
+#include <machine/endian.h>
 #include <algorithm>
 #include <cstring>
 
@@ -21,7 +21,7 @@ ValueType Deserialize(const gsl::span<const gsl::byte> span) {
   std::array<uint64_t, N> value{};
   gsl::copy(span, gsl::byte_span(value));
   for (uint64_t& x : value) {
-    x = le64toh(x);
+      x = ntohll(x);
   }
   return ValueType(value);
 }
@@ -30,7 +30,7 @@ void Serialize(const ValueType& val, const gsl::span<gsl::byte> span_out) {
   const size_t N = ValueType::LimbCount();
   ASSERT(span_out.size() == N * sizeof(uint64_t), "Span size mismatches BigInt size.");
   for (size_t i = 0; i < N; ++i) {
-    uint64_t limb = htole64(val[i]);
+      uint64_t limb = htonll(val[i]);
     gsl::copy(gsl::byte_span(limb), span_out.subspan(i * sizeof(uint64_t), sizeof(uint64_t)));
   }
 }

@@ -17,7 +17,6 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 include(CTest)
-# Basic setup for gtest
 enable_testing()
 include_directories("${CMAKE_SOURCE_DIR}/src")
 

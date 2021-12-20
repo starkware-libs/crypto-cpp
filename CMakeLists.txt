@@ -1,9 +1,26 @@
 cmake_minimum_required (VERSION 3.5)
 if (NOT DEFINED CMAKE_CXX_COMPILER)
-  set(CMAKE_CXX_COMPILER /usr/bin/clang++-6.0)
+  set(CMAKE_CXX_COMPILER /usr/bin/clang++)
 endif()
 
 project(StarkwareCryptoLib VERSION 0.1.0 LANGUAGES CXX)
+
+
+cmake_minimum_required(VERSION 3.14)
+
+# GoogleTest requires at least C++11
+set(CMAKE_CXX_STANDARD 17)
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+
 include(CTest)
 # Basic setup for gtest
 find_package(GTest REQUIRED)
@@ -16,7 +33,7 @@ if (NOT DEFINED CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Werror -Wall -Wextra -fno-strict-aliasing -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Werror -Wall -Wc++14-extensions -Wextra -fno-strict-aliasing -fPIC -Wshift-count-overflow")
 
 set(CC_OPTIMIZE "-O3")
 

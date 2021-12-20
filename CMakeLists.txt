@@ -5,10 +5,6 @@ endif()
 
 project(StarkwareCryptoLib VERSION 0.1.0 LANGUAGES CXX)
 
-
-cmake_minimum_required(VERSION 3.14)
-
-# GoogleTest requires at least C++11
 set(CMAKE_CXX_STANDARD 17)
 
 include(FetchContent)
@@ -20,11 +16,8 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-
 include(CTest)
 # Basic setup for gtest
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
 enable_testing()
 include_directories("${CMAKE_SOURCE_DIR}/src")
 
@@ -33,7 +26,7 @@ if (NOT DEFINED CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Werror -Wall -Wc++14-extensions -Wextra -fno-strict-aliasing -fPIC -Wshift-count-overflow")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Werror -Wall -Wextra -fno-strict-aliasing -fPIC")
 
 set(CC_OPTIMIZE "-O3")
 

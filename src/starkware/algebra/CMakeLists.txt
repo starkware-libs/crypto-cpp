@@ -5,7 +5,7 @@ target_link_libraries(big_int_test gtest gtest_main gmock pthread)
 add_test(big_int_test big_int_test)
 
 add_executable(prime_field_element_test prime_field_element_test.cc)
-target_link_libraries(prime_field_element_test algebra gtest gtest_main gmock pthread)
+target_link_libraries(prime_field_element_test algebra gtest gtest_main pthread)
 add_test(prime_field_element_test prime_field_element_test)
 
 add_executable(fraction_field_element_test fraction_field_element_test.cc)

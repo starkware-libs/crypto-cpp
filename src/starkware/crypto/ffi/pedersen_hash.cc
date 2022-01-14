@@ -1,10 +1,12 @@
-#include <array>
+#include "starkware/crypto/ffi/pedersen_hash.h"
+#include "starkware/crypto/pedersen_hash.h"
 
-#include "third_party/gsl/gsl-lite.hpp"
+#include <array>
 
 #include "starkware/algebra/prime_field_element.h"
 #include "starkware/crypto/ffi/utils.h"
-#include "starkware/crypto/pedersen_hash.h"
+
+#include "third_party/gsl/gsl-lite.hpp"
 
 namespace starkware {
 

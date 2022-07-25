@@ -13,6 +13,14 @@
 #include "starkware/utils/error_handling.h"
 #include "starkware/utils/prng.h"
 
+/*
+    Support for 32-bit builds, where __uint128_t isn't defined.
+*/
+#ifndef __SIZEOF_INT128__
+  #include <boost/multiprecision/cpp_int.hpp>
+  typedef boost::multiprecision::uint128_t __uint128_t;
+#endif
+
 namespace starkware {
 
 static constexpr inline __uint128_t Umul128(uint64_t x, uint64_t y) {

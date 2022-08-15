@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "starkware/crypto/ffi/utils.h"
+#include "starkware/crypto/ffi/portable_endian.h"
 
 namespace starkware {
 

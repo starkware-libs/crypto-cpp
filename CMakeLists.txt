@@ -23,6 +23,7 @@ if (NOT HAVE_UINT128)
   FetchContent_Declare(
     boostorg
     URL https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz
+    URL_HASH SHA256=273f1be93238a068aba4f9735a4a2b003019af067b9c183ed227780b8f36062c
   )
 
   FetchContent_GetProperties(boostorg)

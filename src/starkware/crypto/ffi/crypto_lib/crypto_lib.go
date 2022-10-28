@@ -1,10 +1,12 @@
 package crypto_lib
 
-import "encoding/hex"
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
+	"unsafe"
 )
+
 /*
 
 #cgo CFLAGS: -I.
@@ -15,8 +17,6 @@ import (
 
 */
 import "C"
-import "unsafe"
-
 
 const curveOrder = "800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f"
 
@@ -40,8 +40,8 @@ func reverseHexEndianRepresentation(s string) string {
 	rns := []rune(s)
 	for i, j := 0, len(rns)-2; i < j; i, j = i+2, j-2 {
 		rns[i], rns[j] = rns[j], rns[i]
-        rns[i+1], rns[j+1] = rns[j+1], rns[i+1]
-    }
+		rns[i+1], rns[j+1] = rns[j+1], rns[i+1]
+	}
 	return string(rns)
 }
 
@@ -56,7 +56,7 @@ func padHexString(s string) string {
 /*
   Computes the StarkWare version of the Pedersen hash of x and y.
   Full specification of the hash function can be found here:
-  https://docs.starkware.co/starkex-docs/crypto/pedersen-hash-function
+  https://docs.starkware.co/starkex/pedersen-hash-function.html
 */
 func Hash(input1, input2 string) string {
 	input1_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(input1))

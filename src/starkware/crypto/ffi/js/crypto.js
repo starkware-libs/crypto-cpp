@@ -32,7 +32,7 @@ const curveOrder = new BN('800000000000010ffffffffffffffffb781126dcae7b2321e66a2
 /*
  Computes the StarkWare version of the Pedersen hash of x and y.
  Full specification of the hash function can be found here:
- https://docs.starkware.co/starkex-docs/crypto/pedersen-hash-function
+ https://docs.starkware.co/starkex/pedersen-hash-function.html
 */
 function pedersen(x, y) {
     const x_buf = BigIntBuffer.toBufferLE(x, 32);

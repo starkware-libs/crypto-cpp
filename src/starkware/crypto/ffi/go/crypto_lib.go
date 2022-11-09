@@ -61,32 +61,18 @@ func padHexString(s string) string {
 func Hash(input1, input2 string) string {
 	input1_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(input1))
 	input2_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(input2))
-	in1 := C.CBytes(input1_dec)
-	in2 := C.CBytes(input2_dec)
-	var o [1024]byte
-	out := C.CBytes(o[:])
+	var out [1024]byte
 
 	res := C.Hash(
-		(*C.char)(unsafe.Pointer(in1)),
-		(*C.char)(unsafe.Pointer(in2)),
-		(*C.char)(unsafe.Pointer(out)))
+		(*C.char)(unsafe.Pointer(&input1_dec[0])),
+		(*C.char)(unsafe.Pointer(&input2_dec[0])),
+		(*C.char)(unsafe.Pointer(&out[0])))
 
 	if res != 0 {
-		fmt.Printf("Pedersen hash encountered an error: %s\n", C.GoBytes(unsafe.Pointer(out), 1024))
-		C.free(unsafe.Pointer(in1))
-		C.free(unsafe.Pointer(in2))
-		C.free(unsafe.Pointer(out))
+		fmt.Printf("Pedersen hash encountered an error: %s\n", out)
 		return ""
 	}
-
-	hash_result := "0x" + reverseHexEndianRepresentation(
-		hex.EncodeToString(C.GoBytes(unsafe.Pointer(out), 32)))
-
-	C.free(unsafe.Pointer(in1))
-	C.free(unsafe.Pointer(in2))
-	C.free(unsafe.Pointer(out))
-
-	return hash_result
+	return "0x" + reverseHexEndianRepresentation(hex.EncodeToString(out[:32]))
 }
 
 /*
@@ -95,27 +81,17 @@ func Hash(input1, input2 string) string {
 func GetPublicKey(private_key string) string {
 	private_key_dec, _ := hex.DecodeString(
 		reverseHexEndianRepresentation(padHexString(private_key)))
-	private_key_bytes := C.CBytes(private_key_dec)
-	var o [1024]byte
-	out := C.CBytes(o[:])
+	var out [1024]byte
 
-	res := C.GetPublicKey(
-		(*C.char)(unsafe.Pointer(private_key_bytes)), (*C.char)(unsafe.Pointer(out)))
+	res := C.GetPublicKey((*C.char)(unsafe.Pointer(&private_key_dec[0])),
+		(*C.char)(unsafe.Pointer(&out[0])))
 
 	if res != 0 {
-		fmt.Printf("GetPublicKey encountered an error: %s\n", C.GoBytes(unsafe.Pointer(out), 1024))
-		C.free(unsafe.Pointer(private_key_bytes))
-		C.free(unsafe.Pointer(out))
+		fmt.Printf("GetPublicKey encountered an error: %s\n", C.GoBytes(unsafe.Pointer(&out[0]), 1024))
 		return ""
 	}
 
-	public_key_result := "0x" + reverseHexEndianRepresentation(
-		hex.EncodeToString(C.GoBytes(unsafe.Pointer(out), 32)))
-
-	C.free(unsafe.Pointer(private_key_bytes))
-	C.free(unsafe.Pointer(out))
-
-	return public_key_result
+	return "0x" + reverseHexEndianRepresentation(hex.EncodeToString(out[:32]))
 }
 
 /*
@@ -125,28 +101,17 @@ func GetPublicKey(private_key string) string {
 */
 func Verify(stark_key, msg_hash, r, s string) bool {
 	stark_key_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(stark_key)))
-	stark_key_bytes := C.CBytes(stark_key_dec)
-
 	message_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(msg_hash)))
-	message_bytes := C.CBytes(message_dec)
-
 	r_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(r)))
-	r_bytes := C.CBytes(r_dec)
 
 	w := invertOnCurve(s)
 	w_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(w)))
-	w_bytes := C.CBytes(w_dec)
 
 	res := C.Verify(
-		(*C.char)(unsafe.Pointer(stark_key_bytes)),
-		(*C.char)(unsafe.Pointer(message_bytes)),
-		(*C.char)(unsafe.Pointer(r_bytes)),
-		(*C.char)(unsafe.Pointer(w_bytes)))
-
-	C.free(unsafe.Pointer(stark_key_bytes))
-	C.free(unsafe.Pointer(message_bytes))
-	C.free(unsafe.Pointer(r_bytes))
-	C.free(unsafe.Pointer(w_bytes))
+		(*C.char)(unsafe.Pointer(&stark_key_dec[0])),
+		(*C.char)(unsafe.Pointer(&message_dec[0])),
+		(*C.char)(unsafe.Pointer(&r_dec[0])),
+		(*C.char)(unsafe.Pointer(&w_dec[0])))
 
 	if res == 0 {
 		return false
@@ -163,33 +128,21 @@ func Verify(stark_key, msg_hash, r, s string) bool {
 func Sign(private_key, message, k string) (string, string) {
 	private_key_dec, _ := hex.DecodeString(
 		reverseHexEndianRepresentation(padHexString(private_key)))
-	private_key_bytes := C.CBytes(private_key_dec)
-
 	message_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(message)))
-	message_bytes := C.CBytes(message_dec)
-
 	k_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(k)))
-	k_bytes := C.CBytes(k_dec)
-
-	var o [1024]byte
-	out := C.CBytes(o[:])
+	var out [1024]byte
 
 	C.Sign(
-		(*C.char)(unsafe.Pointer(private_key_bytes)),
-		(*C.char)(unsafe.Pointer(message_bytes)),
-		(*C.char)(unsafe.Pointer(k_bytes)),
-		(*C.char)(unsafe.Pointer(out)))
+		(*C.char)(unsafe.Pointer(&private_key_dec[0])),
+		(*C.char)(unsafe.Pointer(&message_dec[0])),
+		(*C.char)(unsafe.Pointer(&k_dec[0])),
+		(*C.char)(unsafe.Pointer(&out[0])))
 
-	res := reverseHexEndianRepresentation(hex.EncodeToString(C.GoBytes(unsafe.Pointer(out), 64)))
+	res := reverseHexEndianRepresentation(hex.EncodeToString(out[:64]))
 	signature_w := "0x" + res[0:64]
 	signature_r := "0x" + res[64:]
 
 	signature_s := invertOnCurve(signature_w)
-
-	C.free(unsafe.Pointer(private_key_bytes))
-	C.free(unsafe.Pointer(message_bytes))
-	C.free(unsafe.Pointer(k_bytes))
-	C.free(unsafe.Pointer(out))
 
 	return signature_r, signature_s
 }

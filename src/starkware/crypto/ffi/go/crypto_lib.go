@@ -8,7 +8,7 @@ import (
 /*
 
 #cgo CFLAGS: -I.
-#cgo LDFLAGS: -L./.. -lcrypto_c_exports -Wl,-rpath=./.
+#cgo LDFLAGS: -lcrypto_c_exports
 #include <stdlib.h>
 #include "../ecdsa.h"
 #include "../pedersen_hash.h"

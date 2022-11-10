@@ -19,12 +19,12 @@ int HandleError(const char* msg, gsl::span<gsl::byte> out);
 /*
   Deserializes a BigInt (PrimeFieldElement::ValueType) from a byte span.
 */
-ValueType Deserialize(const gsl::span<const gsl::byte> span);
+ValueType Deserialize(const gsl::span<const gsl::byte> span, bool le = true);
 
 /*
   Serializes a BigInt (PrimeFieldElement::ValueType) to a byte span.
 */
-void Serialize(const ValueType& val, const gsl::span<gsl::byte> span_out);
+void Serialize(const ValueType& val, const gsl::span<gsl::byte> span_out, bool le = true);
 
 }  // namespace starkware
 

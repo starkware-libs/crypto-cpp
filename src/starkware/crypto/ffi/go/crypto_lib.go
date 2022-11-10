@@ -49,7 +49,7 @@ func reverseHexEndianRepresentation(s string) string {
   Pads the given hex string with leading zeroes so that its length is 64 characters (32 bytes).
 */
 func padHexString(s string) string {
-	padded := fmt.Sprintf("0x%064s", s[2:])
+	padded := fmt.Sprintf("%064s", s[2:])
 	return padded
 }
 
@@ -59,8 +59,8 @@ func padHexString(s string) string {
   https://docs.starkware.co/starkex-docs/crypto/pedersen-hash-function
 */
 func Hash(input1, input2 string) string {
-	input1_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(input1))
-	input2_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(input2))
+	input1_dec, _ := hex.DecodeString(padHexString(input1))
+	input2_dec, _ := hex.DecodeString(padHexString(input2))
 	var out [1024]byte
 
 	res := C.Hash(
@@ -72,15 +72,14 @@ func Hash(input1, input2 string) string {
 		fmt.Printf("Pedersen hash encountered an error: %s\n", out)
 		return ""
 	}
-	return "0x" + reverseHexEndianRepresentation(hex.EncodeToString(out[:32]))
+	return "0x" + hex.EncodeToString(out[:32])
 }
 
 /*
   Deduces the public key given a private key.
 */
 func GetPublicKey(private_key string) string {
-	private_key_dec, _ := hex.DecodeString(
-		reverseHexEndianRepresentation(padHexString(private_key)))
+	private_key_dec, _ := hex.DecodeString(padHexString(private_key))
 	var out [1024]byte
 
 	res := C.GetPublicKey((*C.char)(unsafe.Pointer(&private_key_dec[0])),
@@ -91,7 +90,7 @@ func GetPublicKey(private_key string) string {
 		return ""
 	}
 
-	return "0x" + reverseHexEndianRepresentation(hex.EncodeToString(out[:32]))
+	return "0x" + hex.EncodeToString(out[:32])
 }
 
 /*
@@ -100,12 +99,12 @@ func GetPublicKey(private_key string) string {
   NOTE: This function assumes that the public_key is on the curve.
 */
 func Verify(stark_key, msg_hash, r, s string) bool {
-	stark_key_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(stark_key)))
-	message_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(msg_hash)))
-	r_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(r)))
+	stark_key_dec, _ := hex.DecodeString(padHexString(stark_key))
+	message_dec, _ := hex.DecodeString(padHexString(msg_hash))
+	r_dec, _ := hex.DecodeString(padHexString(r))
 
 	w := invertOnCurve(s)
-	w_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(w)))
+	w_dec, _ := hex.DecodeString(padHexString(w))
 
 	res := C.Verify(
 		(*C.char)(unsafe.Pointer(&stark_key_dec[0])),
@@ -126,21 +125,24 @@ func Verify(stark_key, msg_hash, r, s string) bool {
   See: https://tools.ietf.org/html/rfc6979.
 */
 func Sign(private_key, message, k string) (string, string) {
-	private_key_dec, _ := hex.DecodeString(
-		reverseHexEndianRepresentation(padHexString(private_key)))
-	message_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(message)))
-	k_dec, _ := hex.DecodeString(reverseHexEndianRepresentation(padHexString(k)))
+	private_key_dec, _ := hex.DecodeString(padHexString(private_key))
+	message_dec, _ := hex.DecodeString(padHexString(message))
+	k_dec, _ := hex.DecodeString(padHexString(k))
 	var out [1024]byte
 
-	C.Sign(
+	ret := C.Sign(
 		(*C.char)(unsafe.Pointer(&private_key_dec[0])),
 		(*C.char)(unsafe.Pointer(&message_dec[0])),
 		(*C.char)(unsafe.Pointer(&k_dec[0])),
 		(*C.char)(unsafe.Pointer(&out[0])))
 
-	res := reverseHexEndianRepresentation(hex.EncodeToString(out[:64]))
-	signature_w := "0x" + res[0:64]
-	signature_r := "0x" + res[64:]
+	if (ret != 0) {
+		return "", ""
+	}
+
+	res := hex.EncodeToString(out[:64])
+	signature_r := "0x" + res[0:64]
+	signature_w := "0x" + res[64:]
 
 	signature_s := invertOnCurve(signature_w)
 

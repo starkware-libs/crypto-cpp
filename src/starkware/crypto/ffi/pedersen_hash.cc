@@ -25,9 +25,9 @@ extern "C" int Hash(
     gsl::byte out[kOutBufferSize]) {
   try {
     auto hash = PedersenHash(
-        PrimeFieldElement::FromBigInt(Deserialize(gsl::make_span(in1, kElementSize))),
-        PrimeFieldElement::FromBigInt(Deserialize(gsl::make_span(in2, kElementSize))));
-    Serialize(hash.ToStandardForm(), gsl::make_span(out, kElementSize));
+        PrimeFieldElement::FromBigInt(Deserialize(gsl::make_span(in1, kElementSize), false)),
+        PrimeFieldElement::FromBigInt(Deserialize(gsl::make_span(in2, kElementSize), false)));
+    Serialize(hash.ToStandardForm(), gsl::make_span(out, kElementSize), false);
   } catch (const std::exception& e) {
     return HandleError(e.what(), gsl::make_span(out, kOutBufferSize));
   } catch (...) {

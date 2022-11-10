@@ -35,12 +35,12 @@ const curveOrder = new BN('800000000000010ffffffffffffffffb781126dcae7b2321e66a2
  https://docs.starkware.co/starkex-docs/crypto/pedersen-hash-function
 */
 function pedersen(x, y) {
-    const x_buf = BigIntBuffer.toBufferLE(x, 32);
-    const y_buf = BigIntBuffer.toBufferLE(y, 32);
+    const x_buf = BigIntBuffer.toBufferBE(x, 32);
+    const y_buf = BigIntBuffer.toBufferBE(y, 32);
     const res_buf = Buffer.alloc(1024);
     const res = libcrypto.Hash(x_buf, y_buf, res_buf);
     assert(res == 0, 'Error: ' + res_buf.toString('utf-8'));
-    return BigIntBuffer.toBigIntLE(res_buf);
+    return BigIntBuffer.toBigIntBE(res_buf.slice(0, 32));
 }
 
 /*
@@ -49,12 +49,12 @@ function pedersen(x, y) {
  NOTE: This function assumes that the public_key is on the curve.
 */
 function verify(stark_key, message_hash, r, s) {
-    const stark_key_buf = BigIntBuffer.toBufferLE(stark_key, 32);
-    const message_hash_buf = BigIntBuffer.toBufferLE(message_hash, 32);
-    const r_buf = BigIntBuffer.toBufferLE(r, 32);
+    const stark_key_buf = BigIntBuffer.toBufferBE(stark_key, 32);
+    const message_hash_buf = BigIntBuffer.toBufferBE(message_hash, 32);
+    const r_buf = BigIntBuffer.toBufferBE(r, 32);
     const bnS = new BN(s.toString(16), 16);
     const w = BigInt('0x' + bnS.invm(curveOrder).toString(16), 16)
-    const s_buf = BigIntBuffer.toBufferLE(w, 32);
+    const s_buf = BigIntBuffer.toBufferBE(w, 32);
     return libcrypto.Verify(stark_key_buf, message_hash_buf, r_buf, s_buf);
 }
 
@@ -65,14 +65,14 @@ function verify(stark_key, message_hash, r, s) {
  See: https://tools.ietf.org/html/rfc6979.
 */
 function sign(private_key, message, k) {
-    const private_key_buf = BigIntBuffer.toBufferLE(private_key, 32);
-    const message_buf = BigIntBuffer.toBufferLE(message, 32);
-    const k_buf = BigIntBuffer.toBufferLE(k, 32);
+    const private_key_buf = BigIntBuffer.toBufferBE(private_key, 32);
+    const message_buf = BigIntBuffer.toBufferBE(message, 32);
+    const k_buf = BigIntBuffer.toBufferBE(k, 32);
     const res_buf = Buffer.alloc(1024);
     const res = libcrypto.Sign(private_key_buf, message_buf, k_buf, res_buf);
     assert(res == 0, 'Error: ' + res_buf.toString('utf-8'));
-    const r = BigIntBuffer.toBigIntLE(res_buf.slice(0, 32));
-    const w = BigIntBuffer.toBigIntLE(res_buf.slice(32, 64));
+    const r = BigIntBuffer.toBigIntBE(res_buf.slice(0, 32));
+    const w = BigIntBuffer.toBigIntBE(res_buf.slice(32, 64));
     const bnW = new BN(w.toString(16), 16)
     const s = BigInt('0x' + bnW.invm(curveOrder).toString(16), 16)
     return {r: r, s: s};
@@ -84,11 +84,11 @@ function sign(private_key, message, k) {
  and used in StarkEx to identify the user.
 */
 function getPublicKey(private_key) {
-    const private_key_buf = BigIntBuffer.toBufferLE(private_key, 32);
+    const private_key_buf = BigIntBuffer.toBufferBE(private_key, 32);
     const res_buf = Buffer.alloc(1024);
     const res = libcrypto.GetPublicKey(private_key_buf, res_buf);
     assert(res == 0, 'Error: ' + res_buf.toString('utf-8'));
-    return BigIntBuffer.toBigIntLE(res_buf);
+    return BigIntBuffer.toBigIntBE(res_buf.slice(0, 32));
 }
 
 module.exports = {

@@ -33,7 +33,7 @@ extern "C" int GetPublicKey(
   return 0;
 }
 
-extern "C" bool Verify(
+extern "C" int Verify(
     const gsl::byte stark_key[kElementSize], const gsl::byte msg_hash[kElementSize],
     const gsl::byte r_bytes[kElementSize], const gsl::byte w_bytes[kElementSize]) {
   try {
